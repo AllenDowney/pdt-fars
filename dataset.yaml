@@ -58,11 +58,11 @@ releases:
       - id: person
         label: People (PERSON data file)
         description: >
-          One row per person involved: occupants of vehicles in transport, and
+          One row per person involved: occupants of motor vehicles, and
           non-motorists. (ST_CASE, VEH_NO) refers to the vehicle table for
-          occupants of vehicles in transport (PER_TYP 1, 2, 9); VEH_NO is 0 for
-          non-motorists, and for occupants of parked or working vehicles it
-          refers to the PARKWORK file, which isn't in this slice.
+          occupants of vehicles in transport (PER_TYP 1, 2, 9) and to the
+          parkwork table for occupants of parked or working vehicles (PER_TYP 3);
+          VEH_NO is 0 for non-motorists.
         sources: [fars-manual-1975-2024, fars-2024-csv]
         key: [ST_CASE, VEH_NO, PER_NO]
         references:
@@ -71,3 +71,17 @@ releases:
           - columns: [ST_CASE, VEH_NO]
             table: vehicle
             when: {column: PER_TYP, in: [1, 2, 9]}
+          - columns: [ST_CASE, VEH_NO]
+            table: parkwork
+            when: {column: PER_TYP, in: [3]}
+      - id: parkwork
+        label: Parked and working vehicles (PARKWORK data file)
+        description: >
+          One row per parked or working motor vehicle involved in a crash. Its
+          VEH_NO values don't overlap the vehicle table's in the same crash.
+          Replaced the VEHNIT file in 2010.
+        sources: [fars-manual-1975-2024, fars-2024-csv]
+        key: [ST_CASE, VEH_NO]
+        references:
+          - columns: [ST_CASE]
+            table: accident

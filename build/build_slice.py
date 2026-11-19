@@ -74,11 +74,19 @@ def parse_elements(path):
     for i, (fname, line) in enumerate(lines):
         if line.strip() != "SAS Name":
             continue
-        # The SAS name(s): the next non-blank line.
-        j = i + 1
+        # The SAS name(s): one or more lines, each "NAME[, NAME...] [years]", e.g.
+        # "HARM_EV 2005-2009" then "PHARM_EV 2010-Later" (a rename).
+        names, j = [], i + 1
         while j < len(lines) and not lines[j][1].strip():
             j += 1
-        names = [n.strip() for n in re.split(r"[,\s]+", lines[j][1].strip()) if n.strip()]
+        while j < len(lines) and (m := SAS_NAME_LINE.match(lines[j][1].strip())):
+            years = m.group(2)
+            names += [(n, years) for n in re.split(r",\s*", m.group(1))]
+            j += 1
+            while j < len(lines) and not lines[j][1].strip() and j + 1 < len(lines) \
+                    and SAS_NAME_LINE.match(lines[j + 1][1].strip()):
+                j += 1
+        j -= 1  # the last name line
         # Back up to "Definition"; the title is the line before it.
         k = i
         while k > 0 and lines[k][1].strip() != "Definition":
@@ -104,17 +112,28 @@ def parse_elements(path):
                 codes = codes[:-1] if codes and codes[-1].strip() else codes  # drop the next element's title
         element = {"id": element_id, "title": title, "file": lines[i][0],
                    "definition": " ".join(definition.split()), "additional": " ".join(additional.split()),
-                   "codes": parse_code_blocks(codes)}
-        for name in names:
+                   "names": names, "codes": parse_code_blocks(codes)}
+        for name, years in names:
             key = (lines[i][0], name)
-            # A discontinued element can share a SAS name with the current one; keep the one coded for 2024.
-            if key in elements and current_codes(elements[key])[0] is not None:
+            # A discontinued element can share a SAS name with the current one, and a name can be
+            # an older name of another element (PARKWORK's HARM_EV, 2005-2009). Keep the element
+            # coded for 2024 under the name it uses now.
+            if key in elements and is_current(elements[key], dict(elements[key]["names"])[name]):
                 continue
             elements[key] = element
     return elements
 
 
+SAS_NAME_LINE = re.compile(r"^([A-Z][A-Z0-9_]*(?:,\s*[A-Z][A-Z0-9_]*)*)(?:\s+(\d{4}(?:-(?:\d{4}|Later))?))?$")
+
+
+def is_current(element, years):
+    """Whether the element is coded for 2024 under a name that's in use in 2024."""
+    return current_codes(element)[0] is not None and (years is None or years.endswith("Later") or years == "2024")
+
+
 ROW_CELL = re.compile(r"^(--|-?\d+(-\d+)?|x+)$")
+OVERPRINTED_CELL = re.compile(r"^(--|\d+)(--|\d+)$")
 
 
 def parse_code_blocks(lines):
@@ -147,7 +166,17 @@ def parse_code_blocks(lines):
             continue
         k = len(blocks[-1]["header"])
         tokens = line.split()
-        if len(tokens) > k and all(ROW_CELL.match(c) for c in tokens[:k]):
+        if len(tokens) > k and all(OVERPRINTED_CELL.match(c) for c in tokens[:k]) \
+                and not all(ROW_CELL.match(c) for c in tokens[:k]) \
+                and len(re.split(r"(?<=[a-z)])(?=[A-Z])", " ".join(tokens[k:]), maxsplit=1)) == 2:
+            # Two rows printed on one line, a pdftotext artifact (PARKWORK's PHARM_EV, codes 98):
+            # "----  98--  ----  ----  --98  Not Reported (2010 Only)Harmful Event,". Split the
+            # cells, and the label where a word runs into a capital; a wrapped line goes to the second.
+            cells = [OVERPRINTED_CELL.match(c).groups() for c in tokens[:k]]
+            first, second = re.split(r"(?<=[a-z)])(?=[A-Z])", " ".join(tokens[k:]), maxsplit=1)
+            blocks[-1]["rows"].append(([c[0] for c in cells], first))
+            blocks[-1]["rows"].append(([c[1] for c in cells], second))
+        elif len(tokens) > k and all(ROW_CELL.match(c) for c in tokens[:k]):
             blocks[-1]["rows"].append((tokens[:k], " ".join(tokens[k:])))
         elif blocks[-1]["rows"] and len(line) - len(line.lstrip()) >= 10:
             cells, label = blocks[-1]["rows"][-1]
@@ -330,6 +359,39 @@ def build_variable(name, table, spec, measure, element, counts, data_labels):
     return record, report
 
 
+def check_keys_and_references(spec):
+    """Check dataset.yaml's keys and references for this release against the data; return report lines.
+
+    A key must be unique and never blank. A reference holds when every row it
+    covers (those meeting `when`, or all rows) has its columns' values among the
+    target table's.
+    """
+    dataset = yaml.safe_load((ROOT / "dataset.yaml").read_text())
+    release = next(r for r in dataset["releases"] if r["id"] == spec["release"])
+    rows = {}
+    for t in release.get("tables", []):
+        with open(RAW / spec["tables"][t["id"]]["data"], encoding="latin-1", newline="") as f:
+            rows[t["id"]] = list(csv.DictReader(f))
+    lines = []
+    for t in release.get("tables", []):
+        data = rows[t["id"]]
+        keys = [tuple(r[c] for c in t["key"]) for r in data]
+        dupes = len(keys) - len(set(keys))
+        blank = sum(any(v.strip() == "" for v in k) for k in keys)
+        ok = "holds" if not dupes and not blank else "FAILS"
+        lines.append(f"- `{t['id']}` key ({', '.join(t['key'])}): {ok}; {len(data):,} rows, "
+                     f"{dupes} duplicates, {blank} blank")
+        for ref in t.get("references", []):
+            target = {tuple(r[c] for c in ref["columns"]) for r in rows[ref["table"]]}
+            when = ref.get("when")
+            covered = [r for r in data if when is None or as_number(r[when["column"]]) in when["in"]]
+            missing = sum(tuple(r[c] for c in ref["columns"]) not in target for r in covered)
+            cond = f" when {when['column']} in {when['in']}" if when else ""
+            lines.append(f"- `{t['id']}` ({', '.join(ref['columns'])}) → `{ref['table']}`{cond}: "
+                         f"{'holds' if not missing else 'FAILS'}; {len(covered):,} rows, {missing} without a match")
+    return lines
+
+
 def main():
     spec = yaml.safe_load((ROOT / "build" / "slice.yaml").read_text())
     measure = {n: m for m, ns in spec["measure"].items() for n in ns}
@@ -365,6 +427,8 @@ def main():
              f"- Codes whose manual and data labels differ only in detail (case, punctuation, year notes, added examples): {len(minor)}",
              f"- Scale signatures: {len(signatures)}", "", "## Missing types assigned, by number of codes", "",
              "| Type | Codes |", "|---|---|", *[f"| `{tp}` | {k} |" for tp, k in sorted(types.items())], "",
+             "## Keys and references in dataset.yaml, checked against the data", "",
+             *check_keys_and_references(spec), "",
              "## Values and labels to look at", "", *([f"- {n}" for n in notes] or ["None."]), ""]
     (ROOT / "build" / "report.md").write_text("\n".join(lines))
     print(f"{len(all_records)} variables in {len(spec['tables'])} tables; see build/report.md")

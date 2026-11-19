@@ -1,5 +1,5 @@
 # The snake_case slice of FARS (PublicDataToolkit Task 5, preliminary): the
-# 2024 national files, three tables. Hand-entered facts are origin: hand.
+# 2024 national files, four tables. Hand-entered facts are origin: hand.
 
 release: "2024"
 author: Allen Downey
@@ -22,11 +22,17 @@ tables:
     source: fars-2024-csv
     data: fars2024_csv/FARS2024NationalCSV/person.csv
     variables: [ST_CASE, VEH_NO, PER_NO, AGE, SEX, PER_TYP, INJ_SEV, SEAT_POS, REST_USE, DRINKING]
+  parkwork:
+    file: PARKWORK
+    source: fars-2024-csv
+    data: fars2024_csv/FARS2024NationalCSV/parkwork.csv
+    variables: [ST_CASE, VEH_NO, PTYPE, PNUMOCCS, PDEATHS, PMODYEAR, PBODYTYP, PHARM_EV]
 
 measure:
   identifier: [ST_CASE, VEH_NO, PER_NO]
-  continuous: [AGE, MOD_YEAR, YEAR, HOUR]
-  count: [FATALS, PERSONS, VE_TOTAL]
+  continuous: [AGE, MOD_YEAR, PMODYEAR, YEAR, HOUR]
+  count: [FATALS, PERSONS, VE_TOTAL, PNUMOCCS, PDEATHS]
   ordinal: [INJ_SEV, DEFORMED]
   categorical: [STATE, MONTH, DAY_WEEK, RUR_URB, LGT_COND, WEATHER, HARM_EV, MAN_COLL, BODY_TYP,
-                ROLLOVER, SPEEDREL, DR_DRINK, SEX, PER_TYP, SEAT_POS, REST_USE, DRINKING]
+                ROLLOVER, SPEEDREL, DR_DRINK, SEX, PER_TYP, SEAT_POS, REST_USE, DRINKING,
+                PTYPE, PBODYTYP, PHARM_EV]

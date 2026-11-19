@@ -1,0 +1,101 @@
+{
+ "pdt_version": "0.1.0",
+ "inputs_sha256": "f8241f6c05bfb37419de3d074b8a41f7672bf7490852e69f50e89232e76c0396",
+ "dataset": "fars",
+ "max_tokens": 20000,
+ "shards": [
+  {
+   "kind": "table",
+   "title": "Release 2024, table accident",
+   "basis": "every variable in the table",
+   "completeness": "complete",
+   "filter": {
+    "release": "2024",
+    "table": "accident"
+   },
+   "releases": [
+    "2024"
+   ],
+   "n_in_scope": 14,
+   "rule_versions": {},
+   "notes": [],
+   "count": 14,
+   "files": [
+    {
+     "path": "shards/table/2024-accident.jsonl",
+     "form": "jsonl",
+     "variables": 14,
+     "tokens": 9497
+    },
+    {
+     "path": "shards/table/2024-accident.txt",
+     "form": "txt",
+     "variables": 14,
+     "tokens": 296
+    }
+   ]
+  },
+  {
+   "kind": "table",
+   "title": "Release 2024, table vehicle",
+   "basis": "every variable in the table",
+   "completeness": "complete",
+   "filter": {
+    "release": "2024",
+    "table": "vehicle"
+   },
+   "releases": [
+    "2024"
+   ],
+   "n_in_scope": 8,
+   "rule_versions": {},
+   "notes": [],
+   "count": 8,
+   "files": [
+    {
+     "path": "shards/table/2024-vehicle.jsonl",
+     "form": "jsonl",
+     "variables": 8,
+     "tokens": 7238
+    },
+    {
+     "path": "shards/table/2024-vehicle.txt",
+     "form": "txt",
+     "variables": 8,
+     "tokens": 201
+    }
+   ]
+  },
+  {
+   "kind": "table",
+   "title": "Release 2024, table person",
+   "basis": "every variable in the table",
+   "completeness": "complete",
+   "filter": {
+    "release": "2024",
+    "table": "person"
+   },
+   "releases": [
+    "2024"
+   ],
+   "n_in_scope": 10,
+   "rule_versions": {},
+   "notes": [],
+   "count": 10,
+   "files": [
+    {
+     "path": "shards/table/2024-person.jsonl",
+     "form": "jsonl",
+     "variables": 10,
+     "tokens": 6389
+    },
+    {
+     "path": "shards/table/2024-person.txt",
+     "form": "txt",
+     "variables": 10,
+     "tokens": 231
+    }
+   ]
+  }
+ ]
+}

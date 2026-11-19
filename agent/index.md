@@ -31,6 +31,6 @@ Read `SKILL.md` before answering a question from these files.
 
 | Shard | Variables | Completeness | Tokens (txt / jsonl) | Basis |
 |---|---|---|---|---|
-| [Release 2024, table accident](shards/table/2024-accident.txt) | 14 | `complete` | 296 / 9,497 | every variable in the table |
-| [Release 2024, table vehicle](shards/table/2024-vehicle.txt) | 8 | `complete` | 201 / 7,238 | every variable in the table |
-| [Release 2024, table person](shards/table/2024-person.txt) | 10 | `complete` | 231 / 6,389 | every variable in the table |
+| [Release 2024, table accident](shards/table/2024-accident.txt) | 14 | `complete` | 964 / 9,497 | every variable in the table |
+| [Release 2024, table vehicle](shards/table/2024-vehicle.txt) | 8 | `complete` | 602 / 7,238 | every variable in the table |
+| [Release 2024, table person](shards/table/2024-person.txt) | 10 | `complete` | 664 / 6,389 | every variable in the table |

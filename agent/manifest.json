@@ -1,6 +1,6 @@
 {
  "pdt_version": "0.1.0",
- "inputs_sha256": "a6f7091619989719f3cbfd22d465bddf577fa4ba97e35c24f9ef3c067646253d",
+ "inputs_sha256": "e0aac29f8eafbac5b476002c37bb3f99c2e2d1fcc683b32347fbe0d01fae0689",
  "dataset": "fars",
  "max_tokens": 20000,
  "shards": [

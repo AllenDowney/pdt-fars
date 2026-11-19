@@ -1,10 +1,11 @@
 {
  "pdt_version": "0.1.0",
- "inputs_sha256": "e0aac29f8eafbac5b476002c37bb3f99c2e2d1fcc683b32347fbe0d01fae0689",
+ "inputs_sha256": "242bb79cb294a4fdff50343a423546c9a572d59a01a4dae2cd753a512dd51dd3",
  "dataset": "fars",
  "spec": "0.1.0",
  "files": [
   "2024.yaml",
+  "2017.yaml",
   "LOSSES.md"
  ],
  "losses": {
@@ -16,7 +17,20 @@
    "numeric_code_labels": 24,
    "missing_codes": 62,
    "conditional_references": 2,
-   "derived": 1,
+   "links": 40,
+   "derived": 2,
+   "histories": 42
+  },
+  "2017": {
+   "release_version": 1,
+   "variables": 40,
+   "availability": 40,
+   "provenance_fields": 286,
+   "numeric_code_labels": 24,
+   "missing_codes": 63,
+   "conditional_references": 2,
+   "links": 40,
+   "derived": 2,
    "histories": 42
   }
  }

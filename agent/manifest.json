@@ -1,6 +1,6 @@
 {
  "pdt_version": "0.1.0",
- "inputs_sha256": "e0aac29f8eafbac5b476002c37bb3f99c2e2d1fcc683b32347fbe0d01fae0689",
+ "inputs_sha256": "242bb79cb294a4fdff50343a423546c9a572d59a01a4dae2cd753a512dd51dd3",
  "dataset": "fars",
  "max_tokens": 20000,
  "shards": [
@@ -34,7 +34,7 @@
      "path": "shards/table/2024-accident.txt",
      "form": "txt",
      "variables": 14,
-     "tokens": 782
+     "tokens": 800
     }
    ]
   },
@@ -68,7 +68,7 @@
      "path": "shards/table/2024-vehicle.txt",
      "form": "txt",
      "variables": 8,
-     "tokens": 516
+     "tokens": 526
     }
    ]
   },
@@ -102,7 +102,7 @@
      "path": "shards/table/2024-person.txt",
      "form": "txt",
      "variables": 10,
-     "tokens": 580
+     "tokens": 593
     }
    ]
   },
@@ -136,44 +136,186 @@
      "path": "shards/table/2024-parkwork.txt",
      "form": "txt",
      "variables": 8,
-     "tokens": 520
+     "tokens": 530
+    }
+   ]
+  },
+  {
+   "kind": "table",
+   "title": "Release 2017, table accident",
+   "basis": "every variable in the table",
+   "full_records": [
+    "metadata/releases/2017/accident/variables.jsonl"
+   ],
+   "completeness": "complete",
+   "filter": {
+    "release": "2017",
+    "table": "accident"
+   },
+   "releases": [
+    "2017"
+   ],
+   "n_in_scope": 14,
+   "rule_versions": {},
+   "notes": [],
+   "count": 14,
+   "files": [
+    {
+     "path": "shards/table/2017-accident.jsonl",
+     "form": "jsonl",
+     "variables": 14,
+     "tokens": 6986
+    },
+    {
+     "path": "shards/table/2017-accident.txt",
+     "form": "txt",
+     "variables": 14,
+     "tokens": 800
+    }
+   ]
+  },
+  {
+   "kind": "table",
+   "title": "Release 2017, table vehicle",
+   "basis": "every variable in the table",
+   "full_records": [
+    "metadata/releases/2017/vehicle/variables.jsonl"
+   ],
+   "completeness": "complete",
+   "filter": {
+    "release": "2017",
+    "table": "vehicle"
+   },
+   "releases": [
+    "2017"
+   ],
+   "n_in_scope": 8,
+   "rule_versions": {},
+   "notes": [],
+   "count": 8,
+   "files": [
+    {
+     "path": "shards/table/2017-vehicle.jsonl",
+     "form": "jsonl",
+     "variables": 8,
+     "tokens": 5102
+    },
+    {
+     "path": "shards/table/2017-vehicle.txt",
+     "form": "txt",
+     "variables": 8,
+     "tokens": 526
+    }
+   ]
+  },
+  {
+   "kind": "table",
+   "title": "Release 2017, table person",
+   "basis": "every variable in the table",
+   "full_records": [
+    "metadata/releases/2017/person/variables.jsonl"
+   ],
+   "completeness": "complete",
+   "filter": {
+    "release": "2017",
+    "table": "person"
+   },
+   "releases": [
+    "2017"
+   ],
+   "n_in_scope": 10,
+   "rule_versions": {},
+   "notes": [],
+   "count": 10,
+   "files": [
+    {
+     "path": "shards/table/2017-person.jsonl",
+     "form": "jsonl",
+     "variables": 10,
+     "tokens": 4396
+    },
+    {
+     "path": "shards/table/2017-person.txt",
+     "form": "txt",
+     "variables": 10,
+     "tokens": 593
+    }
+   ]
+  },
+  {
+   "kind": "table",
+   "title": "Release 2017, table parkwork",
+   "basis": "every variable in the table",
+   "full_records": [
+    "metadata/releases/2017/parkwork/variables.jsonl"
+   ],
+   "completeness": "complete",
+   "filter": {
+    "release": "2017",
+    "table": "parkwork"
+   },
+   "releases": [
+    "2017"
+   ],
+   "n_in_scope": 8,
+   "rule_versions": {},
+   "notes": [],
+   "count": 8,
+   "files": [
+    {
+     "path": "shards/table/2017-parkwork.jsonl",
+     "form": "jsonl",
+     "variables": 8,
+     "tokens": 5049
+    },
+    {
+     "path": "shards/table/2017-parkwork.txt",
+     "form": "txt",
+     "variables": 8,
+     "tokens": 530
     }
    ]
   },
   {
    "kind": "scale",
    "title": "Scale signature: yes_no",
-   "basis": "variables with this scale signature",
+   "basis": "variables with this scale signature in the current release (2024, 2017)",
    "full_records": [
+    "metadata/releases/2017/vehicle/variables.jsonl",
     "metadata/releases/2024/vehicle/variables.jsonl"
    ],
    "completeness": "complete_by_rule",
    "filter": {
+    "release": [
+     "2024",
+     "2017"
+    ],
     "derived": {
      "scale_signature": "yes_no"
     }
    },
    "releases": [
+    "2017",
     "2024"
    ],
-   "n_in_scope": 40,
+   "n_in_scope": 80,
    "rule_versions": {
     "scale_signature_from_valid_labels": "0.1"
    },
    "notes": [],
-   "count": 1,
+   "count": 2,
    "files": [
     {
      "path": "shards/scale/yes-no.jsonl",
      "form": "jsonl",
-     "variables": 1,
-     "tokens": 512
+     "variables": 2,
+     "tokens": 928
     },
     {
      "path": "shards/scale/yes-no.txt",
      "form": "txt",
-     "variables": 1,
-     "tokens": 167
+     "variables": 2,
+     "tokens": 219
     }
    ]
   }

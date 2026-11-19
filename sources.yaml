@@ -6,7 +6,7 @@ sources:
     url: https://doi.org/10.21949/dz60-ft73
     path: data/raw/fars_analytical_users_manual_1975_2024.pdf
     releases: ["2024"]
-    redistribution: unknown
+    redistribution: ship
     acquisition: manual
     manual_steps: >
       Download from the FARS page at https://www.nhtsa.gov/ in a browser
@@ -20,7 +20,7 @@ sources:
     format: csv
     path: data/raw/FARS2024NationalCSV.zip
     releases: ["2024"]
-    redistribution: unknown
+    redistribution: ship
     acquisition: manual
     manual_steps: >
       Download FARS2024NationalCSV.zip from NHTSA's FARS file downloads, under
@@ -33,7 +33,7 @@ sources:
     format: sas7bdat
     path: data/raw/FARS2024NationalSAS.zip
     releases: ["2024"]
-    redistribution: unknown
+    redistribution: ship
     acquisition: manual
     manual_steps: As for the CSV.
     fetched_on: "2026-11-19"
@@ -44,7 +44,7 @@ sources:
     format: csv
     path: data/raw/FARS2024NationalAuxiliaryCSV.zip
     releases: ["2024"]
-    redistribution: unknown
+    redistribution: ship
     acquisition: manual
     manual_steps: As for the CSV.
     fetched_on: "2026-11-19"
@@ -55,7 +55,7 @@ sources:
     kind: other
     format: pdf
     path: data/raw/811364.pdf
-    redistribution: unknown
+    redistribution: ship
     acquisition: manual
     manual_steps: Download from NHTSA in a browser.
     fetched_on: "2026-11-19"

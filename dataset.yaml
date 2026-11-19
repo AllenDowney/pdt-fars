@@ -18,16 +18,17 @@ citation: >
 terms:
   url: https://www.nhtsa.gov/research-data/fatality-analysis-reporting-system-fars
   summary: >
-    Not yet reviewed by a person. The manual's disclaimer says NHTSA distributes
-    it "in the interest of information exchange" and that it "is available to
-    the public"; it states no license or restriction, and it is a US government
-    work. The recommendation is everything ship, pending Allen's confirmation.
-    nhtsa.gov blocks scripts and headless browsers, so the site's terms page
-    hasn't been read.
-  data: unknown
-  documentation: unknown
-  metadata: unknown
-  llm_processing: unknown
+    The manual's disclaimer says NHTSA distributes it "in the interest of
+    information exchange" and that it "is available to the public"; it states no
+    license or restriction, and FARS is a US government work. nhtsa.gov blocks
+    scripts and headless browsers, so the site itself wasn't read. Allen Downey
+    decided everything may ship.
+  data: ship
+  documentation: ship
+  metadata: ship
+  llm_processing: allowed
+  reviewed_by: Allen Downey
+  reviewed_on: "2026-11-19"
 naming:
   case: upper
   note: SAS names, e.g. LGT_COND. The CSV files add a label column for most coded columns (LGT_CONDNAME).

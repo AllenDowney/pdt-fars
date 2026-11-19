@@ -2,7 +2,7 @@
 
 Metadata for the [Fatality Analysis Reporting System](https://www.nhtsa.gov/research-data/fatality-analysis-reporting-system-fars) (FARS), built to the [PublicDataToolkit](https://github.com/AllenDowney/PublicDataToolkit) standard.
 
-**Status:** preliminary. A 32-variable slice of the 2024 national files, in three tables: crashes (14 variables), vehicles (8) and people (10). **Not for publication** until the terms are reviewed.
+**Status:** preliminary. A 32-variable slice of the 2024 national files, in three tables: crashes (14 variables), vehicles (8) and people (10).
 
 ## What the dataset is
 
@@ -10,7 +10,7 @@ FARS is NHTSA's census of fatal motor vehicle crashes in the US since 1975, code
 
 ## Terms of use
 
-Not yet reviewed by a person. NHTSA's manual states no license or restriction, and it is a US government work; see [`dataset.yaml`](dataset.yaml).
+FARS is a US government work, distributed by NHTSA with no license or restriction. The terms as reviewed are in [`dataset.yaml`](dataset.yaml).
 
 ## How to get the data
 

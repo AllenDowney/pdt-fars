@@ -1,6 +1,6 @@
 {
  "pdt_version": "0.1.0",
- "inputs_sha256": "f8241f6c05bfb37419de3d074b8a41f7672bf7490852e69f50e89232e76c0396",
+ "inputs_sha256": "779b8253738a7005f217e8ceb710e1cf03774428734d94cd2bb2b1c25a58d9a2",
  "dataset": "fars",
  "max_tokens": 20000,
  "shards": [
@@ -8,6 +8,9 @@
    "kind": "table",
    "title": "Release 2024, table accident",
    "basis": "every variable in the table",
+   "full_records": [
+    "metadata/releases/2024/accident/variables.jsonl"
+   ],
    "completeness": "complete",
    "filter": {
     "release": "2024",
@@ -25,13 +28,13 @@
      "path": "shards/table/2024-accident.jsonl",
      "form": "jsonl",
      "variables": 14,
-     "tokens": 9497
+     "tokens": 7023
     },
     {
      "path": "shards/table/2024-accident.txt",
      "form": "txt",
      "variables": 14,
-     "tokens": 964
+     "tokens": 773
     }
    ]
   },
@@ -39,6 +42,9 @@
    "kind": "table",
    "title": "Release 2024, table vehicle",
    "basis": "every variable in the table",
+   "full_records": [
+    "metadata/releases/2024/vehicle/variables.jsonl"
+   ],
    "completeness": "complete",
    "filter": {
     "release": "2024",
@@ -56,13 +62,13 @@
      "path": "shards/table/2024-vehicle.jsonl",
      "form": "jsonl",
      "variables": 8,
-     "tokens": 7238
+     "tokens": 5118
     },
     {
      "path": "shards/table/2024-vehicle.txt",
      "form": "txt",
      "variables": 8,
-     "tokens": 602
+     "tokens": 507
     }
    ]
   },
@@ -70,6 +76,9 @@
    "kind": "table",
    "title": "Release 2024, table person",
    "basis": "every variable in the table",
+   "full_records": [
+    "metadata/releases/2024/person/variables.jsonl"
+   ],
    "completeness": "complete",
    "filter": {
     "release": "2024",
@@ -87,13 +96,50 @@
      "path": "shards/table/2024-person.jsonl",
      "form": "jsonl",
      "variables": 10,
-     "tokens": 6389
+     "tokens": 4346
     },
     {
      "path": "shards/table/2024-person.txt",
      "form": "txt",
      "variables": 10,
-     "tokens": 664
+     "tokens": 571
+    }
+   ]
+  },
+  {
+   "kind": "scale",
+   "title": "Scale signature: yes_no",
+   "basis": "variables with this scale signature",
+   "full_records": [
+    "metadata/releases/2024/vehicle/variables.jsonl"
+   ],
+   "completeness": "complete_by_rule",
+   "filter": {
+    "derived": {
+     "scale_signature": "yes_no"
+    }
+   },
+   "releases": [
+    "2024"
+   ],
+   "n_in_scope": 32,
+   "rule_versions": {
+    "scale_signature_from_valid_labels": "0.1"
+   },
+   "notes": [],
+   "count": 1,
+   "files": [
+    {
+     "path": "shards/scale/yes-no.jsonl",
+     "form": "jsonl",
+     "variables": 1,
+     "tokens": 512
+    },
+    {
+     "path": "shards/scale/yes-no.txt",
+     "form": "txt",
+     "variables": 1,
+     "tokens": 158
     }
    ]
   }

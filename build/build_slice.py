@@ -47,18 +47,29 @@ ELEMENT_ID = re.compile(r"^([A-Z]{1,3}\d+[A-Za-z]?)\.\s+(.*)$")
 YEAR_TOKEN = re.compile(r"^(\d{4}-?|\d{4}-\d{4}|\d{4}-Later|Later)$")
 
 
+PAGE_NUMBER = re.compile(r"^\s*(\d+|[A-H]-\d+)\s*$")
+
+
 def clean_lines(path):
-    """The manual's lines without page numbers and running headers, each with its data file."""
+    """The manual's lines without page numbers and running headers, as (data file, line, page).
+
+    The page number is the footer that follows the line.
+    """
     current_file = None
-    out = []
+    out, pending = [], []
     for line in path.read_text(encoding="utf-8").splitlines():
         m = RUNNING_HEADER.search(line)
         if m:
             current_file = m.group(1) or "KEY"
             continue
+        if (p := PAGE_NUMBER.match(line)):
+            for k in pending:
+                out[k] = out[k][:2] + (p.group(1),)
+            pending = []
         if PAGE_NOISE.search(line):
             continue
-        out.append((current_file, line.rstrip()))
+        pending.append(len(out))
+        out.append((current_file, line.rstrip(), None))
     return out
 
 
@@ -67,11 +78,26 @@ def is_year_header(line):
     return bool(tokens) and all(YEAR_TOKEN.match(t) for t in tokens)
 
 
-def parse_elements(path):
-    """Return {(data file, SAS name): element} for every element in the manual."""
-    lines = clean_lines(path)
+def index_elements(element_list):
+    """Return {(data file, SAS name): element}, the element each name refers to in 2024."""
     elements = {}
-    for i, (fname, line) in enumerate(lines):
+    for element in element_list:
+        for name, years in element["names"]:
+            key = (element["file"], name)
+            # A discontinued element can share a SAS name with the current one, and a name can be
+            # an older name of another element (PARKWORK's HARM_EV, 2005-2009). Keep the element
+            # coded for 2024 under the name it uses now.
+            if key in elements and is_current(elements[key], dict(elements[key]["names"])[name]):
+                continue
+            elements[key] = element
+    return elements
+
+
+def parse_element_list(path):
+    """Every element in the manual, in order, current and discontinued."""
+    lines = clean_lines(path)
+    out = []
+    for i, (fname, line, _) in enumerate(lines):
         if line.strip() != "SAS Name":
             continue
         # The SAS name(s): one or more lines, each "NAME[, NAME...] [years]", e.g.
@@ -94,7 +120,7 @@ def parse_elements(path):
         title_line = next((lines[t][1].strip() for t in range(k - 1, max(k - 4, -1), -1) if lines[t][1].strip()), "")
         m = ELEMENT_ID.match(title_line)
         element_id, title = (m.group(1), m.group(2)) if m else (None, title_line)
-        body = [l for _, l in lines[k + 1:i]]
+        body = [l for _, l, _ in lines[k + 1:i]]
         text = "\n".join(body)
         definition, _, additional = text.partition("Additional Information")
         # Attribute codes: after "Attribute Codes", up to the next element's "Definition" (minus its title).
@@ -112,16 +138,10 @@ def parse_elements(path):
                 codes = codes[:-1] if codes and codes[-1].strip() else codes  # drop the next element's title
         element = {"id": element_id, "title": title, "file": lines[i][0],
                    "definition": " ".join(definition.split()), "additional": " ".join(additional.split()),
-                   "names": names, "codes": parse_code_blocks(codes)}
-        for name, years in names:
-            key = (lines[i][0], name)
-            # A discontinued element can share a SAS name with the current one, and a name can be
-            # an older name of another element (PARKWORK's HARM_EV, 2005-2009). Keep the element
-            # coded for 2024 under the name it uses now.
-            if key in elements and is_current(elements[key], dict(elements[key]["names"])[name]):
-                continue
-            elements[key] = element
-    return elements
+                   "names": names, "codes": parse_code_blocks(codes),
+                   "page": lines[a][2] if a < len(lines) else None}  # where the code matrix starts
+        out.append(element)
+    return out
 
 
 SAS_NAME_LINE = re.compile(r"^([A-Z][A-Z0-9_]*(?:,\s*[A-Z][A-Z0-9_]*)*)(?:\s+(\d{4}(?:-(?:\d{4}|Later))?))?$")
@@ -359,6 +379,111 @@ def build_variable(name, table, spec, measure, element, counts, data_labels):
     return record, report
 
 
+# ------------------------------------------------------------ histories
+
+def span(years, default_from):
+    """A name's years ("2005-2009", "2009", "2010-Later", or None for all) as {"from", "to"}."""
+    if years is None:
+        return {"from": default_from}
+    lo, _, hi = years.partition("-")
+    return {"from": int(lo)} if hi == "Later" else {"from": int(lo), "to": int(hi or lo)}
+
+
+def block_periods(block):
+    """A matrix's periods. A two-line header pairs each token ending in "-" with the next on line two."""
+    second, out = list(block["header2"]), []
+    for token in block["header"]:
+        text = token + second.pop(0) if token.endswith("-") and second else token
+        lo, _, hi = text.partition("-")
+        out.append({"from": int(lo)} if hi == "Later" else {"from": int(lo), "to": int(hi or lo)})
+    return out
+
+
+def history_code(token):
+    """A matrix cell: None for "--", a number, or a string for a range or a placeholder ("1-99", "xxxx")."""
+    if token == "--":
+        return None
+    n = as_number(token)
+    return token if n is None else n
+
+
+def element_history(element, table, name):
+    """The history (STANDARD.md §5.4) of one name of an element: its matrix, rows by periods."""
+    periods, attributes = [], []
+    for block in element["codes"]:
+        ps = block_periods(block)
+        before, after = len(periods), sum(len(block_periods(b)) for b in element["codes"]) - len(periods) - len(ps)
+        attributes += [{"label": label, "codes": [None] * before + [history_code(c) for c in cells] + [None] * after}
+                       for cells, label in block["rows"]]
+        periods += ps
+    # Names on one line are parallel variables (WEATHER1, WEATHER2); a line without this name
+    # or a sibling's is an earlier name of all of them (WEATHER, 1975-2006).
+    latest = latest_names(element)
+    names = [{"name": n, "waves": span(y, periods[0]["from"])} for n, y in element["names"]
+             if n == name or n not in latest]
+    history = {"id": f"{table}/{name}", "table": table, "name": name,
+               **({"element": element["id"]} if element["id"] else {}),
+               "label": element["title"], "names": names, "periods": periods, "attributes": attributes,
+               "origin": {"origin": "publisher", "source": MANUAL,
+                          **({"location": f"p. {element['page']}"} if element["page"] else {})}}
+    notes = []
+    if len(element["codes"]) > 1:
+        notes.append(f"The manual prints {len(element['codes'])} separate matrices; rows aren't matched across them.")
+    if len(latest) > 1:
+        notes.append(f"One element with several names: {', '.join(sorted(latest))}.")
+    if notes:
+        history["note"] = " ".join(notes)
+    return history
+
+
+def latest_names(element):
+    """The names an element has in its last period: the names its histories are keyed by."""
+    def end(years):
+        return 9999 if years is None or years.endswith("Later") else int(years.split("-")[-1])
+    last = max(end(y) for _, y in element["names"])
+    return {n for n, y in element["names"] if end(y) == last}
+
+
+def build_histories(spec, element_list, elements):
+    """Histories for the slice's variables, and for discontinued elements that share their names."""
+    histories, seen = [], set()
+    for table, t in spec["tables"].items():
+        files = (t["file"], "KEY")
+        for name in t["variables"]:
+            current = elements.get((t["file"], name)) or elements.get(("KEY", name))
+            if current and current["codes"]:
+                histories.append(element_history(current, table, name))
+                seen.add((table, name))
+            for other in element_list:
+                if other is current or other["file"] not in files or not other["codes"] \
+                        or name not in {n for n, _ in other["names"]}:
+                    continue
+                for last in sorted(latest_names(other)):
+                    if (table, last) not in seen:
+                        histories.append(element_history(other, table, last))
+                        seen.add((table, last))
+    return histories
+
+
+def check_histories(histories, records):
+    """Report lines: does each record's codes match its history's last period?"""
+    by_id = {h["id"]: h for h in histories}
+    lines, agree = [], 0
+    for r in records:
+        h = by_id.get(f"{r['table']}/{r['name']}")
+        if h is None or "values" not in r:
+            continue
+        column = [a["codes"][-1] for a in h["attributes"]]
+        expected = [c for c in column if isinstance(c, (int, float))]
+        got = [v["code"] for v in r["values"] if v["kind"] != "unresolved"]
+        if sorted(expected) == sorted(got):
+            agree += 1
+        else:
+            lines.append(f"- `{h['id']}`: history's last period has {sorted(set(expected) - set(got))} "
+                         f"not in the record; the record has {sorted(set(got) - set(expected))} not in the history")
+    return [f"- {len(histories)} histories; {agree} records with values agree with their history's last period", *lines]
+
+
 def check_keys_and_references(spec):
     """Check dataset.yaml's keys and references for this release against the data; return report lines.
 
@@ -395,7 +520,8 @@ def check_keys_and_references(spec):
 def main():
     spec = yaml.safe_load((ROOT / "build" / "slice.yaml").read_text())
     measure = {n: m for m, ns in spec["measure"].items() for n in ns}
-    elements = parse_elements(ROOT / "data" / "interim" / "manual.txt")
+    element_list = parse_element_list(ROOT / "data" / "interim" / "manual.txt")
+    elements = index_elements(element_list)
     release_dir = META / "releases" / spec["release"]
     all_records, notes, summaries = [], [], []
     for table, t in spec["tables"].items():
@@ -419,6 +545,8 @@ def main():
                   for r in all_records
                   if (lab := tuple(v["label"] for v in r.get("values", []) if v["kind"] == "valid")) in SCALE_SIGNATURES]
     write_jsonl(META / "derived" / "scale_signature.jsonl", signatures)
+    histories = build_histories(spec, element_list, elements)
+    write_jsonl(META / "histories.jsonl", histories)
     types = collections.Counter(tp for r in all_records for v in r.get("values", []) if v["kind"] == "missing"
                                 for tp in v["missing_types"])
     lines = [f"# Build report: FARS slice, release {spec['release']}", "", "Generated by `build/build_slice.py`. Do not edit.", "",
@@ -427,6 +555,7 @@ def main():
              f"- Codes whose manual and data labels differ only in detail (case, punctuation, year notes, added examples): {len(minor)}",
              f"- Scale signatures: {len(signatures)}", "", "## Missing types assigned, by number of codes", "",
              "| Type | Codes |", "|---|---|", *[f"| `{tp}` | {k} |" for tp, k in sorted(types.items())], "",
+             "## Code histories (metadata/histories.jsonl)", "", *check_histories(histories, all_records), "",
              "## Keys and references in dataset.yaml, checked against the data", "",
              *check_keys_and_references(spec), "",
              "## Values and labels to look at", "", *([f"- {n}" for n in notes] or ["None."]), ""]

@@ -59,12 +59,15 @@ releases:
         label: People (PERSON data file)
         description: >
           One row per person involved: occupants of vehicles in transport, and
-          non-motorists. VEH_NO is 0 for non-motorists, and for occupants of
-          parked or working vehicles it refers to the PARKWORK file (not in this
-          slice), so (ST_CASE, VEH_NO) refers to the vehicle table only for
-          occupants of vehicles in transport.
+          non-motorists. (ST_CASE, VEH_NO) refers to the vehicle table for
+          occupants of vehicles in transport (PER_TYP 1, 2, 9); VEH_NO is 0 for
+          non-motorists, and for occupants of parked or working vehicles it
+          refers to the PARKWORK file, which isn't in this slice.
         sources: [fars-manual-1975-2024, fars-2024-csv]
         key: [ST_CASE, VEH_NO, PER_NO]
         references:
           - columns: [ST_CASE]
             table: accident
+          - columns: [ST_CASE, VEH_NO]
+            table: vehicle
+            when: {column: PER_TYP, in: [1, 2, 9]}

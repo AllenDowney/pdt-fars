@@ -37,6 +37,7 @@ META = ROOT / "metadata"
 
 MANUAL = "fars-manual-1975-2024"
 RULE_VERSION = "0.1"
+MISSING_RULE_VERSION = "0.2"  # fars_missing_from_labels; 0.2 types "Unknown" as unknown (STANDARD.md §4.2), not dk
 
 # ------------------------------------------------------------ the manual
 
@@ -169,11 +170,11 @@ def current_codes(element):
 
 # Rule fars_missing_from_labels: the manual doesn't mark missing codes. FARS is
 # a census coded from police reports, not a survey, so "Unknown" means the
-# report didn't say, recorded here as dk with this note.
+# records didn't say: the type `unknown`, not `dk`.
 MISSING_LABELS = {
     "not reported": ["no_answer"],
-    "reported as unknown": ["dk"],
-    "unknown": ["dk"],
+    "reported as unknown": ["unknown"],
+    "unknown": ["unknown"],
 }
 
 
@@ -182,7 +183,7 @@ def missing_types(label):
     if key in MISSING_LABELS:
         return MISSING_LABELS[key]
     if key.startswith("unknown") or key.startswith("reported as unknown"):
-        return ["dk"]
+        return ["unknown"]
     return None
 
 
@@ -241,13 +242,10 @@ def build_variable(name, table, spec, measure, element, counts, data_labels):
         record["storage_type"] = "integer" if all(isinstance(v, int) for v in present) else "float"
     if name in measure:
         record["measure"] = measure[name]
-    notes = []
     if element["definition"]:
-        notes.append("Definition: " + element["definition"])
+        record["description"] = element["definition"]
     if element["additional"]:
-        notes.append("Additional information: " + element["additional"])
-    if notes:
-        record["notes"] = "\n".join(notes)
+        record["notes"] = element["additional"]
 
     codes, header = current_codes(element) if element["codes"] else ([], "")
     values, documented, ranges, actual_values = [], {}, [], None
@@ -264,10 +262,14 @@ def build_variable(name, table, spec, measure, element, counts, data_labels):
             continue
         code = as_number(token)
         documented[code] = label
-        types = missing_types(label)
+        types = missing_types(label)  # typed from the manual's label
+        # The record uses the 2024 data file's own label when it has one (STANDARD.md §4.2):
+        # the manual's labels cover 1975-2024 and can carry history ("(Since 2018)").
+        seen = data_labels.get(str(code), {})
+        manual_label, label = label, (seen.most_common(1)[0][0] if seen else label)
         if types:
             values.append({"code": code, "label": label, "kind": "missing", "missing_types": types,
-                           "origin": {"origin": "rule", "rule": "fars_missing_from_labels", "rule_version": RULE_VERSION,
+                           "origin": {"origin": "rule", "rule": "fars_missing_from_labels", "rule_version": MISSING_RULE_VERSION,
                                       "source": MANUAL,
                                       "note": "The manual doesn't mark missing codes; kind and type from the label. "
                                               "FARS is coded from police reports, so 'Unknown' means the report didn't say."}})
@@ -285,7 +287,7 @@ def build_variable(name, table, spec, measure, element, counts, data_labels):
                            "origin": {"origin": "data_file", "source": spec["tables"][table]["source"],
                                       "note": f"Occurs {n} times in the 2024 data; not in the manual's 2024 codes."}})
             report.append(f"`{table}/{name}` code {code}: occurs {n} times, not in the manual; marked unresolved")
-    for code, label in documented.items():
+    for code, label in documented.items():  # documented holds the manual's labels
         seen = data_labels.get(str(code), {})
         if seen:
             data_label = seen.most_common(1)[0][0]
@@ -309,9 +311,11 @@ def build_variable(name, table, spec, measure, element, counts, data_labels):
     record["source_location"] = {"source": MANUAL, **({"anchor": element["id"]} if element.get("id") else {})}
 
     hand = {"origin": "hand", "author": spec["author"], "date": spec["date"]}
-    fields = {"notes": {"origin": "publisher", "source": MANUAL, "note": "The element's Definition and Additional Information."},
+    fields = {"description": {"origin": "publisher", "source": MANUAL, "note": "The element's Definition."},
+              "notes": {"origin": "publisher", "source": MANUAL, "note": "The element's Additional Information."},
               "values": {"origin": "publisher", "source": MANUAL,
-                         "note": f"The manual's codes for 2024 (column '{header}'); which are missing by rule (see each code)."},
+                         "note": f"Codes from the manual's 2024 column ('{header}'); labels from the 2024 CSV's NAME "
+                                 "column where it has one, else the manual; which codes are missing by rule (see each code)."},
               "availability": {"origin": "data_file", "source": spec["tables"][table]["source"],
                                "note": "n counts rows whose value isn't a missing code."}}
     if "storage_type" in record:

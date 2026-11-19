@@ -1,7 +1,9 @@
 # The snake_case slice of FARS (PublicDataToolkit Tasks 5 and 13): the 2024 and
 # 2017 national files, four tables. Hand-entered facts are origin: hand.
 
-author: Allen Downey
+author: Claude (PublicDataToolkit Tasks 5 and 13)
+# The hand-assigned measures are Task 5's (7a23f52), except the parkwork table's (PTYPE, PNUMOCCS,
+# PDEATHS, PMODYEAR, PBODYTYP, PHARM_EV and the keys ST_CASE, VEH_NO), which are Task 13's (f2761b7).
 date: "2026-11-19"
 
 # Each release's data files, by table. Its codes come from the manual's column

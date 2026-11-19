@@ -34,7 +34,7 @@
      "path": "shards/table/2024-accident.txt",
      "form": "txt",
      "variables": 14,
-     "tokens": 773
+     "tokens": 782
     }
    ]
   },
@@ -68,7 +68,7 @@
      "path": "shards/table/2024-vehicle.txt",
      "form": "txt",
      "variables": 8,
-     "tokens": 507
+     "tokens": 516
     }
    ]
   },
@@ -102,7 +102,7 @@
      "path": "shards/table/2024-person.txt",
      "form": "txt",
      "variables": 10,
-     "tokens": 571
+     "tokens": 580
     }
    ]
   },
@@ -139,7 +139,7 @@
      "path": "shards/scale/yes-no.txt",
      "form": "txt",
      "variables": 1,
-     "tokens": 158
+     "tokens": 167
     }
    ]
   }

@@ -1,0 +1,69 @@
+standard_version: "0.1"
+id: fars
+title: Fatality Analysis Reporting System
+publisher:
+  name: National Highway Traffic Safety Administration (NHTSA), National Center for Statistics and Analysis
+  url: https://www.nhtsa.gov/
+url: https://www.nhtsa.gov/research-data/fatality-analysis-reporting-system-fars
+description: >
+  A census of fatal motor vehicle crashes in the 50 States, the District of
+  Columbia and Puerto Rico since 1975, coded from police reports and other
+  records. Not a survey: there are no questions, and "unknown" means the
+  records didn't say.
+citation: >
+  National Center for Statistics and Analysis. (2026, April). Fatality Analysis
+  Reporting System analytical user's manual, 1975-2024 (Report No. DOT HS 813
+  794). National Highway Traffic Safety Administration.
+  https://doi.org/10.21949/dz60-ft73
+terms:
+  url: https://www.nhtsa.gov/research-data/fatality-analysis-reporting-system-fars
+  summary: >
+    Not yet reviewed by a person. The manual's disclaimer says NHTSA distributes
+    it "in the interest of information exchange" and that it "is available to
+    the public"; it states no license or restriction, and it is a US government
+    work. The recommendation is everything ship, pending Allen's confirmation.
+    nhtsa.gov blocks scripts and headless browsers, so the site's terms page
+    hasn't been read.
+  data: unknown
+  documentation: unknown
+  metadata: unknown
+  llm_processing: unknown
+naming:
+  case: upper
+  note: SAS names, e.g. LGT_COND. The CSV files add a label column for most coded columns (LGT_CONDNAME).
+dimensions:
+  wave:
+    label: data year
+    column: YEAR
+releases:
+  - id: "2024"
+    label: FARS 2024 national data files
+    status: current
+    sources: [fars-manual-1975-2024, fars-2024-csv]
+    tables:
+      - id: accident
+        label: Crashes (ACCIDENT data file)
+        description: One row per fatal crash.
+        sources: [fars-manual-1975-2024, fars-2024-csv]
+        key: [ST_CASE]
+      - id: vehicle
+        label: Vehicles in transport (VEHICLE data file)
+        description: One row per motor vehicle in transport involved in a crash.
+        sources: [fars-manual-1975-2024, fars-2024-csv]
+        key: [ST_CASE, VEH_NO]
+        references:
+          - columns: [ST_CASE]
+            table: accident
+      - id: person
+        label: People (PERSON data file)
+        description: >
+          One row per person involved: occupants of vehicles in transport, and
+          non-motorists. VEH_NO is 0 for non-motorists, and for occupants of
+          parked or working vehicles it refers to the PARKWORK file (not in this
+          slice), so (ST_CASE, VEH_NO) refers to the vehicle table only for
+          occupants of vehicles in transport.
+        sources: [fars-manual-1975-2024, fars-2024-csv]
+        key: [ST_CASE, VEH_NO, PER_NO]
+        references:
+          - columns: [ST_CASE]
+            table: accident

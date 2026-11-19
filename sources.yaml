@@ -1,0 +1,62 @@
+sources:
+  - id: fars-manual-1975-2024
+    title: Fatality Analysis Reporting System Analytical User's Manual, 1975-2024 (DOT HS 813 794)
+    kind: codebook
+    format: pdf
+    url: https://doi.org/10.21949/dz60-ft73
+    path: data/raw/fars_analytical_users_manual_1975_2024.pdf
+    releases: ["2024"]
+    redistribution: unknown
+    acquisition: manual
+    manual_steps: >
+      Download from the FARS page at https://www.nhtsa.gov/ in a browser
+      (nhtsa.gov blocks scripts). The build reads data/interim/manual.txt, made
+      with `pdftotext -layout`.
+    fetched_on: "2026-11-19"
+    sha256: 210bc33d0572147bf695a39d5261e75158d88b269221e18e460b23d0504cc574
+  - id: fars-2024-csv
+    title: FARS 2024 national data, CSV (FARS2024NationalCSV.zip)
+    kind: data
+    format: csv
+    path: data/raw/FARS2024NationalCSV.zip
+    releases: ["2024"]
+    redistribution: unknown
+    acquisition: manual
+    manual_steps: >
+      Download FARS2024NationalCSV.zip from NHTSA's FARS file downloads, under
+      2024/National, in a browser, and unzip it to data/raw/fars2024_csv/.
+    fetched_on: "2026-11-19"
+    sha256: 5112727a8c0dc91ffee27ca05bddb073934f2d192ce4fae997da767dccdbe04f
+  - id: fars-2024-sas
+    title: FARS 2024 national data, SAS (FARS2024NationalSAS.zip)
+    kind: data
+    format: sas7bdat
+    path: data/raw/FARS2024NationalSAS.zip
+    releases: ["2024"]
+    redistribution: unknown
+    acquisition: manual
+    manual_steps: As for the CSV.
+    fetched_on: "2026-11-19"
+    sha256: 78ef05a918b54acb5e9c2c21a939c353a960ba9fcf02d05665a4fea65fd03934
+  - id: fars-2024-aux-csv
+    title: FARS 2024 national auxiliary files, CSV (FARS2024NationalAuxiliaryCSV.zip)
+    kind: data
+    format: csv
+    path: data/raw/FARS2024NationalAuxiliaryCSV.zip
+    releases: ["2024"]
+    redistribution: unknown
+    acquisition: manual
+    manual_steps: As for the CSV.
+    fetched_on: "2026-11-19"
+    sha256: dadddce5028dd405e9ead4a55c056eac1bd597465888ba142d07b310f5a4001a
+    note: Derived variables in NCSA's analytical classifications; see the Q&A, DOT HS 811 364.
+  - id: fars-aux-qa
+    title: FARS and GES Auxiliary Datasets Q & A (DOT HS 811 364, August 2010)
+    kind: other
+    format: pdf
+    path: data/raw/811364.pdf
+    redistribution: unknown
+    acquisition: manual
+    manual_steps: Download from NHTSA in a browser.
+    fetched_on: "2026-11-19"
+    sha256: 03da0846ca445d22944a7e1b67b7b990c7c5741d7dc120ade47e4dd5bbbd8c36

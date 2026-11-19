@@ -89,6 +89,27 @@ releases:
     label: FARS 2017 national data files (final file, last updated 2022-03-02)
     status: current
     sources: [fars-manual-1975-2024, fars-2017-csv, fars-2017-release-note]
+    # From the release note's Update Notes, verbatim (line breaks joined). The first entry,
+    # 09/27/2018, is the release itself.
+    revisions:
+      - date: "2019-10-22"
+        source: fars-2017-release-note
+        description: 'this is the first release of the FARS 2017 final file.'
+      - date: "2019-10-30"
+        source: fars-2017-release-note
+        description: 'acc_aux file is updated for National CSV and SAS zip files.'
+      - date: "2020-02-19"
+        source: fars-2017-release-note
+        description: 'Puerto Rico alcohol imputation files are updated due to errors in the previous version.'
+      - date: "2020-08-14"
+        source: fars-2017-release-note
+        description: 'The National accident.csv file has been updated for the variable "Longitute" precision from 4-digit to 8-digits.'
+      - date: "2020-12-18"
+        source: fars-2017-release-note
+        description: 'The following updates are made for 2017 files: 1. Accident SAS File: add STATENAME, COUNTYNAME, CITYNAME 2. For many States (AL,AZ,AR,CA,CO,CT,DE, FL,GA,HI,IL,IN,KS,KY,LA, MD,MI,MO,MT,NJ,NY, NC,OH,OK,OR,PA,PR,SC,SD,TN,TX,UT,VA,WA, WI) updated motored cycle BODY TYPE, MAKE and MODEL.  Some of these changes triggered revisions to collateral data elements such as ROLLOVER, LOCATION OF ROLLOVER, EJECTION, EJECTION PATH, RESTRAINT SYSTEM USE, RELATED FACTORS-VEHICLE. 3. For many States (CA,FL,GA,IL,IN,IA,KY,MI,MS,NC,SC,TN,TX,WA,WI,GA), update Underride/Override; 4. For IL ST_CASE 170765, school bus related is changed to 1; 5. For ND, updated Various elements, all levels, crash, vehicle, driver, person 6. For MA ST_CASE 250293, update traffic way identifier and ownership. 7. Starting from this file release, the CSV files contain the (ID, TEXT) value for look-up data variables. 8. Starting from this file release, VINDecode files are not published any more.'
+      - date: "2022-03-02"
+        source: fars-2017-release-note
+        description: 'The following updates are made for 2017 files: 1. Publish VPICDECODE and VPICTRAILERDECODE files. These files are created using NHTSA''s vPIC tool and contains the vPIC decode results for cleanly decoded VINs. For detailed information about this file, please refer to "Product Information Catalog and Vehicle Listing (vPIC) Analytical User''s Manual, 2020" 2. Updating Race and Hispanic Origin for Louisiana cases 3. MIACC, MIDRVACC, and MIPER files are updated 4. PER_AUX, VEH_AUX and ACC_AUX files are updated 5. Starting from this file release, the FARS file directory structure has been changed beginning 1982. Auxiliary files are zipped separately from the rest of the FARS files. For each year, there are two folders, one for national and one for Puerto Rico. In each folder, there are four zip files - one zip file for Auxiliary SAS files - one zip file for Auxiliary CSV files - one zip file for non-Auxiliary SAS files - one zip file for non-Auxiliary CSV files'
     tables:
       - id: accident
         label: Crashes (ACCIDENT data file)

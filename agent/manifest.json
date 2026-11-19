@@ -1,6 +1,6 @@
 {
  "pdt_version": "0.1.0",
- "inputs_sha256": "779b8253738a7005f217e8ceb710e1cf03774428734d94cd2bb2b1c25a58d9a2",
+ "inputs_sha256": "a6f7091619989719f3cbfd22d465bddf577fa4ba97e35c24f9ef3c067646253d",
  "dataset": "fars",
  "max_tokens": 20000,
  "shards": [
@@ -107,6 +107,40 @@
    ]
   },
   {
+   "kind": "table",
+   "title": "Release 2024, table parkwork",
+   "basis": "every variable in the table",
+   "full_records": [
+    "metadata/releases/2024/parkwork/variables.jsonl"
+   ],
+   "completeness": "complete",
+   "filter": {
+    "release": "2024",
+    "table": "parkwork"
+   },
+   "releases": [
+    "2024"
+   ],
+   "n_in_scope": 8,
+   "rule_versions": {},
+   "notes": [],
+   "count": 8,
+   "files": [
+    {
+     "path": "shards/table/2024-parkwork.jsonl",
+     "form": "jsonl",
+     "variables": 8,
+     "tokens": 5084
+    },
+    {
+     "path": "shards/table/2024-parkwork.txt",
+     "form": "txt",
+     "variables": 8,
+     "tokens": 520
+    }
+   ]
+  },
+  {
    "kind": "scale",
    "title": "Scale signature: yes_no",
    "basis": "variables with this scale signature",
@@ -122,7 +156,7 @@
    "releases": [
     "2024"
    ],
-   "n_in_scope": 32,
+   "n_in_scope": 40,
    "rule_versions": {
     "scale_signature_from_valid_labels": "0.1"
    },

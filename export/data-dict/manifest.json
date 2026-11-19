@@ -1,0 +1,23 @@
+{
+ "pdt_version": "0.1.0",
+ "inputs_sha256": "e0aac29f8eafbac5b476002c37bb3f99c2e2d1fcc683b32347fbe0d01fae0689",
+ "dataset": "fars",
+ "spec": "0.1.0",
+ "files": [
+  "2024.yaml",
+  "LOSSES.md"
+ ],
+ "losses": {
+  "2024": {
+   "release_version": 1,
+   "variables": 40,
+   "availability": 40,
+   "provenance_fields": 286,
+   "numeric_code_labels": 24,
+   "missing_codes": 62,
+   "conditional_references": 2,
+   "derived": 1,
+   "histories": 42
+  }
+ }
+}

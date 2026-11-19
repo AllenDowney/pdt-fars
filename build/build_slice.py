@@ -1,11 +1,12 @@
-"""Build the FARS slice's metadata records from the Analytical User's Manual and the 2024 CSV files.
+"""Build the FARS slice's metadata records from the Analytical User's Manual and the national CSV files.
 
 Usage:
     python build/build_slice.py
 
 Reads build/slice.yaml, data/interim/manual.txt (the 1975-2024 Analytical
-User's Manual, converted with `pdftotext -layout`) and the 2024 national CSV
-files. Writes metadata/releases/2024/<table>/variables.jsonl,
+User's Manual, converted with `pdftotext -layout`) and each release's national
+CSV files. Writes metadata/releases/<release>/<table>/variables.jsonl,
+metadata/histories.jsonl, metadata/links.jsonl,
 metadata/derived/scale_signature.jsonl and build/report.md.
 
 Where each field comes from:
@@ -18,8 +19,8 @@ Where each field comes from:
   because the manual doesn't mark missing codes
 
 The manual gives each element's codes as a matrix of year ranges, e.g.
-1975-1979 | 1980-2008 | 2009 | 2010-2017 | 2018-Later. The 2024 codes are the
-column ending in "Later". Each element's data file is in the page's running
+1975-1979 | 1980-2008 | 2009 | 2010-2017 | 2018-Later. A release's codes are the
+column whose years include the release's data year (its id). Each element's data file is in the page's running
 header ("... The PERSON Data File").
 """
 
@@ -206,6 +207,16 @@ def parse_code_blocks(lines):
     return blocks
 
 
+def column_codes(element, year):
+    """The column for one data year: (codes [(token, label)], its period, e.g. "2010-2017"), or (None, reason)."""
+    for block in element["codes"]:
+        for i, p in enumerate(block_periods(block)):
+            if p["from"] <= year <= p.get("to", 9999):
+                period = f"{p['from']}-{p.get('to', 'Later')}" if p.get("to") != p["from"] else str(p["from"])
+                return [(cells[i], label) for cells, label in block["rows"] if cells[i] != "--"], period
+    return None, f"no column for {year}"
+
+
 def current_codes(element):
     """The 2024 column: (codes [(token, label)], header text), or (None, reason)."""
     for block in reversed(element["codes"]):
@@ -278,11 +289,12 @@ def comparable(label):
 minor = []  # label differences that are only wording detail
 
 
-def build_variable(name, table, spec, measure, element, counts, data_labels):
-    report = []
-    record = {"dataset": "fars", "release": spec["release"], "table": table, "name": name}
+def build_variable(name, table, spec, rel, measure, element, counts, data_labels):
+    """One release's record. `rel` is the release in slice.yaml, with its `id` (the data year) and `source`."""
+    report, year = [], int(rel["id"])
+    record = {"dataset": "fars", "release": rel["id"], "table": table, "name": name}
     if element is None:
-        report.append(f"`{table}/{name}`: not found in the manual")
+        report.append(f"`{rel['id']}/{table}/{name}`: not found in the manual")
         element = {"title": "", "definition": "", "additional": "", "codes": [], "id": None}
     if element["title"]:
         record["label"] = element["title"]
@@ -296,10 +308,10 @@ def build_variable(name, table, spec, measure, element, counts, data_labels):
     if element["additional"]:
         record["notes"] = element["additional"]
 
-    codes, header = current_codes(element) if element["codes"] else ([], "")
+    codes, header = column_codes(element, year) if element["codes"] else ([], "")
     values, documented, ranges, actual_values = [], {}, [], None
     if codes is None:
-        report.append(f"`{table}/{name}`: {header}")
+        report.append(f"`{rel['id']}/{table}/{name}`: {header}")
         codes = []
     for token, label in codes:
         if re.fullmatch(r"x+", token):
@@ -312,7 +324,7 @@ def build_variable(name, table, spec, measure, element, counts, data_labels):
         code = as_number(token)
         documented[code] = label
         types = missing_types(label)  # typed from the manual's label
-        # The record uses the 2024 data file's own label when it has one (STANDARD.md §4.2):
+        # The record uses the release's data file's own label when it has one (STANDARD.md §4.2):
         # the manual's labels cover 1975-2024 and can carry history ("(Since 2018)").
         seen = data_labels.get(str(code), {})
         manual_label, label = label, (seen.most_common(1)[0][0] if seen else label)
@@ -333,9 +345,9 @@ def build_variable(name, table, spec, measure, element, counts, data_labels):
         in_range = any(lo <= code <= hi for lo, hi, _ in ranges)
         if code not in documented and not in_range and not actual_values and (values or ranges):
             values.append({"code": code, "label": "", "kind": "unresolved",
-                           "origin": {"origin": "data_file", "source": spec["tables"][table]["source"],
-                                      "note": f"Occurs {n} times in the 2024 data; not in the manual's 2024 codes."}})
-            report.append(f"`{table}/{name}` code {code}: occurs {n} times, not in the manual; marked unresolved")
+                           "origin": {"origin": "data_file", "source": rel["source"],
+                                      "note": f"Occurs {n} times in the {year} data; not in the manual's codes for {year}."}})
+            report.append(f"`{rel['id']}/{table}/{name}` code {code}: occurs {n} times, not in the manual; marked unresolved")
     for code, label in documented.items():  # documented holds the manual's labels
         seen = data_labels.get(str(code), {})
         if seen:
@@ -343,9 +355,9 @@ def build_variable(name, table, spec, measure, element, counts, data_labels):
             if comparable(data_label) == comparable(label):
                 continue
             if comparable(data_label).startswith(comparable(label)) or comparable(label).startswith(comparable(data_label)):
-                minor.append((table, name, code))  # one adds examples or a qualifier
+                minor.append((rel["id"], table, name, code))  # one adds examples or a qualifier
             else:
-                report.append(f"`{table}/{name}` code {code}: manual says {label!r}, data says {data_label!r}")
+                report.append(f"`{rel['id']}/{table}/{name}` code {code}: manual says {label!r}, data says {data_label!r}")
     if values:
         record["values"] = values
     if "valid_range" not in record and (actual_values or measure.get(name) in {"identifier", "count", "continuous"}) and present:
@@ -356,24 +368,24 @@ def build_variable(name, table, spec, measure, element, counts, data_labels):
 
     n_valid = sum(n for v, n in present.items()
                   if v not in documented or not missing_types(documented[v]))
-    record["availability"] = [{"wave": int(spec["release"]), "n": n_valid}]
+    record["availability"] = [{"wave": year, "n": n_valid}]
     record["source_location"] = {"source": MANUAL, **({"anchor": element["id"]} if element.get("id") else {})}
 
     hand = {"origin": "hand", "author": spec["author"], "date": spec["date"]}
     fields = {"description": {"origin": "publisher", "source": MANUAL, "note": "The element's Definition."},
               "notes": {"origin": "publisher", "source": MANUAL, "note": "The element's Additional Information."},
               "values": {"origin": "publisher", "source": MANUAL,
-                         "note": f"Codes from the manual's 2024 column ('{header}'); labels from the 2024 CSV's NAME "
+                         "note": f"Codes from the manual's column for {header}; labels from the {year} CSV's NAME "
                                  "column where it has one, else the manual; which codes are missing by rule (see each code)."},
-              "availability": {"origin": "data_file", "source": spec["tables"][table]["source"],
+              "availability": {"origin": "data_file", "source": rel["source"],
                                "note": "n counts rows whose value isn't a missing code."}}
     if "storage_type" in record:
         fields["storage_type"] = {"origin": "rule", "rule": "storage_type_from_values", "rule_version": RULE_VERSION,
-                                  "source": spec["tables"][table]["source"]}
+                                  "source": rel["source"]}
     if "measure" in record:
         fields["measure"] = hand
     if "valid_range" in record and not ranges:
-        fields["valid_range"] = {"origin": "data_file", "source": spec["tables"][table]["source"],
+        fields["valid_range"] = {"origin": "data_file", "source": rel["source"],
                                  "note": "Min and max of the values that occur."}
     record["provenance"] = {"record": {"origin": "publisher", "source": MANUAL}, "fields": fields}
     return record, report
@@ -465,26 +477,146 @@ def build_histories(spec, element_list, elements):
     return histories
 
 
+def period_index(history, year):
+    return next((i for i, p in enumerate(history["periods"]) if p["from"] <= year <= p.get("to", 9999)), None)
+
+
+def history_column(history, year):
+    """{attribute index: code} for the period that includes `year`."""
+    i = period_index(history, year)
+    if i is None:
+        return {}
+    return {k: a["codes"][i] for k, a in enumerate(history["attributes"]) if a["codes"][i] is not None}
+
+
+def name_in(history, year):
+    return next((n["name"] for n in history["names"]
+                 if n["waves"]["from"] <= year <= n["waves"].get("to", 9999)), None)
+
+
 def check_histories(histories, records):
-    """Report lines: does each record's codes match its history's last period?"""
+    """Report lines: does each record's codes match its history's column for the record's year?"""
     by_id = {h["id"]: h for h in histories}
     lines, agree = [], 0
     for r in records:
         h = by_id.get(f"{r['table']}/{r['name']}")
         if h is None or "values" not in r:
             continue
-        column = [a["codes"][-1] for a in h["attributes"]]
-        expected = [c for c in column if isinstance(c, (int, float))]
+        expected = [c for c in history_column(h, int(r["release"])).values() if isinstance(c, (int, float))]
         got = [v["code"] for v in r["values"] if v["kind"] != "unresolved"]
         if sorted(expected) == sorted(got):
             agree += 1
         else:
-            lines.append(f"- `{h['id']}`: history's last period has {sorted(set(expected) - set(got))} "
+            lines.append(f"- `{r['release']}/{h['id']}`: the history has {sorted(set(expected) - set(got))} "
                          f"not in the record; the record has {sorted(set(got) - set(expected))} not in the history")
-    return [f"- {len(histories)} histories; {agree} records with values agree with their history's last period", *lines]
+    return [f"- {len(histories)} histories; {agree} records with values agree with their history's column "
+            "for the record's year", *lines]
 
 
-def check_keys_and_references(spec):
+def in_range(code, token):
+    m = re.fullmatch(r"(-?\d+)-(-?\d+)", str(token))
+    return bool(m) and int(m.group(1)) <= code <= int(m.group(2))
+
+
+def compare_with_data(histories, release, data):
+    """Test the histories against one release's data: each code that occurs, and its NAME label.
+
+    `data` is {(table, name): (Counter of values, {value: Counter of NAME labels})}. Returns
+    (summary counts, lines listing the disagreements).
+    """
+    counts, lines = collections.Counter(), []
+    year = int(release)
+    for h in histories:
+        if (h["table"], h["name"]) not in data:
+            continue
+        values, labels = data[(h["table"], h["name"])]
+        column = {code: h["attributes"][k]["label"] for k, code in history_column(h, year).items()}
+        counts["histories"] += 1
+        for raw, n in sorted(values.items(), key=lambda kv: (as_number(kv[0]) is None, as_number(kv[0]) or 0)):
+            code = as_number(raw)
+            if code is None:
+                continue
+            counts["codes"] += 1
+            if code in column:
+                seen = labels.get(raw)
+                if not seen:
+                    counts["predicted, no label in the data"] += 1
+                    continue
+                data_label, label = seen.most_common(1)[0][0], column[code]
+                if data_label == label:
+                    counts["predicted, same label"] += 1
+                elif comparable(data_label) == comparable(label):
+                    counts["predicted, label differs only in detail"] += 1
+                else:
+                    counts["predicted, label differs"] += 1
+                    lines.append(f"- `{release}/{h['id']}` code {code}: history says {label!r}, data says {data_label!r}")
+            elif any(in_range(code, t) or re.fullmatch(r"x+", str(t)) for t in column):
+                counts["within a documented range"] += 1
+            else:
+                counts["not in the history"] += 1
+                lines.append(f"- `{release}/{h['id']}` code {code}: occurs {n} times; not in the history's column for {year}")
+    return counts, lines
+
+
+LINK_RULE_VERSION = "0.1"
+SINCE_NOTE = re.compile(r"\(Since (\d{4})\)", re.I)
+
+
+def build_links(spec, histories, records):
+    """Links between releases (STANDARD.md §5.2), by rule fars_links_from_history over each history's columns.
+
+    - renamed: the history's name differs between the two years;
+    - codes_changed: the set of codes differs, or one of the publisher's rows has a different code;
+    - labels_changed: a code in both years belongs to rows with different labels (LGT_COND 9), or to
+      one row whose label notes a change between the two years, "(Since 2018)": the manual keeps one
+      row for WEATHER 99, "Unknown/Reported as Unknown (Since 2018)", and the data confirm the change;
+    - same_item: none of these.
+    """
+    have = {(r["release"], r["table"], r["name"]) for r in records}
+    links = []
+    for pair in spec.get("links", []):
+        a, b = pair["from"], pair["to"]
+        ya, yb = int(a), int(b)
+        for h in histories:
+            na, nb = name_in(h, ya), name_in(h, yb)
+            if (a, h["table"], na) not in have or (b, h["table"], nb) not in have:
+                continue
+            ca, cb = history_column(h, ya), history_column(h, yb)
+            la = {code: h["attributes"][k]["label"] for k, code in ca.items()}
+            lb = {code: h["attributes"][k]["label"] for k, code in cb.items()}
+            changes, relations = [], []
+            if na != nb:
+                relations.append("renamed")
+            recoded = [k for k in ca.keys() & cb.keys() if ca[k] != cb[k]]
+            if set(la) != set(lb) or recoded:
+                relations.append("codes_changed")
+                changes += [f"{h['attributes'][k]['label']!r}: {ca[k]} -> {cb[k]}" for k in recoded]
+                if set(la) - set(lb):
+                    changes.append(f"dropped {sorted(set(la) - set(lb), key=str)}")
+                if set(lb) - set(la):
+                    changes.append(f"added {sorted(set(lb) - set(la), key=str)}")
+            relabeled = [c for c in la.keys() & lb.keys() if la[c] != lb[c]]
+            noted = [c for c in la.keys() & lb.keys() if la[c] == lb[c]
+                     and any(ya < int(y) <= yb for y in SINCE_NOTE.findall(la[c]))]
+            if relabeled or noted:
+                relations.append("labels_changed")
+                changes += [f"code {c}: {la[c]!r} -> {lb[c]!r}" for c in sorted(relabeled, key=str)]
+                changes += [f"code {c}: {la[c]!r} notes a change" for c in sorted(noted, key=str)]
+            link = {"from": {"release": a, "table": h["table"], "name": na},
+                    "to": {"release": b, "table": h["table"], "name": nb},
+                    "relations": relations or ["same_item"],
+                    "origin": {"origin": "rule", "rule": "fars_links_from_history", "rule_version": LINK_RULE_VERSION,
+                               "source": MANUAL,
+                               "note": f"From the code history {h['id']} (metadata/histories.jsonl): the manual's "
+                                       f"columns for {a} and {b}."}}
+            if changes:
+                more = f"; and {len(changes) - 8} more" if len(changes) > 8 else ""
+                link["note"] = "; ".join(changes[:8]) + more
+            links.append(link)
+    return links
+
+
+def check_keys_and_references(rel):
     """Check dataset.yaml's keys and references for this release against the data; return report lines.
 
     A key must be unique and never blank. A reference holds when every row it
@@ -492,10 +624,10 @@ def check_keys_and_references(spec):
     target table's.
     """
     dataset = yaml.safe_load((ROOT / "dataset.yaml").read_text())
-    release = next(r for r in dataset["releases"] if r["id"] == spec["release"])
+    release = next(r for r in dataset["releases"] if r["id"] == rel["id"])
     rows = {}
     for t in release.get("tables", []):
-        with open(RAW / spec["tables"][t["id"]]["data"], encoding="latin-1", newline="") as f:
+        with open(RAW / rel["data"][t["id"]], encoding="latin-1", newline="") as f:
             rows[t["id"]] = list(csv.DictReader(f))
     lines = []
     for t in release.get("tables", []):
@@ -504,7 +636,7 @@ def check_keys_and_references(spec):
         dupes = len(keys) - len(set(keys))
         blank = sum(any(v.strip() == "" for v in k) for k in keys)
         ok = "holds" if not dupes and not blank else "FAILS"
-        lines.append(f"- `{t['id']}` key ({', '.join(t['key'])}): {ok}; {len(data):,} rows, "
+        lines.append(f"- `{rel['id']}/{t['id']}` key ({', '.join(t['key'])}): {ok}; {len(data):,} rows, "
                      f"{dupes} duplicates, {blank} blank")
         for ref in t.get("references", []):
             target = {tuple(r[c] for c in ref["columns"]) for r in rows[ref["table"]]}
@@ -512,7 +644,7 @@ def check_keys_and_references(spec):
             covered = [r for r in data if when is None or as_number(r[when["column"]]) in when["in"]]
             missing = sum(tuple(r[c] for c in ref["columns"]) not in target for r in covered)
             cond = f" when {when['column']} in {when['in']}" if when else ""
-            lines.append(f"- `{t['id']}` ({', '.join(ref['columns'])}) → `{ref['table']}`{cond}: "
+            lines.append(f"- `{rel['id']}/{t['id']}` ({', '.join(ref['columns'])}) → `{ref['table']}`{cond}: "
                          f"{'holds' if not missing else 'FAILS'}; {len(covered):,} rows, {missing} without a match")
     return lines
 
@@ -522,45 +654,66 @@ def main():
     measure = {n: m for m, ns in spec["measure"].items() for n in ns}
     element_list = parse_element_list(ROOT / "data" / "interim" / "manual.txt")
     elements = index_elements(element_list)
-    release_dir = META / "releases" / spec["release"]
-    all_records, notes, summaries = [], [], []
-    for table, t in spec["tables"].items():
-        header, values, labels = read_csv(RAW / t["data"], t["variables"])
-        file_names = {name for (f, name) in elements if f in (t["file"], "KEY")}
-        data_cols = {c for c in header if not c.endswith("NAME")}
-        summaries.append(f"- `{table}`: {len(t['variables'])} variables in the slice; data file has {len(header)} columns "
-                         f"({len(data_cols)} without the NAME columns); manual elements for {t['file']}: {len(file_names)}; "
-                         f"data columns not in the manual: {sorted(data_cols - file_names)[:12] or 'none'}")
-        records = []
-        for name in t["variables"]:
-            element = elements.get((t["file"], name)) or elements.get(("KEY", name))
-            record, report = build_variable(name, table, spec, measure, element, values[name], labels[name])
-            records.append(record)
-            notes += report
-        write_jsonl(release_dir / table / "variables.jsonl", records)
-        all_records += records
+    histories = build_histories(spec, element_list, elements)
+    write_jsonl(META / "histories.jsonl", histories)
+    all_records, notes, summaries, sections = [], [], [], []
+    for rid, rel in spec["releases"].items():
+        rel = {"id": rid, **rel}
+        data = {}
+        for table, t in spec["tables"].items():
+            header, values, labels = read_csv(RAW / rel["data"][table], t["variables"])
+            header = [c.strip() for c in header]
+            data.update({(table, n): (values[n], labels[n]) for n in t["variables"]})
+            file_names = {name for (f, name) in elements if f in (t["file"], "KEY")}
+            data_cols = {c for c in header if not c.endswith("NAME")}
+            summaries.append(f"- `{rid}/{table}`: {len(t['variables'])} variables in the slice; data file has {len(header)} "
+                             f"columns ({len(data_cols)} without the NAME columns); manual elements for {t['file']}: "
+                             f"{len(file_names)}; data columns not in the manual: {sorted(data_cols - file_names)[:12] or 'none'}")
+            records = []
+            for name in t["variables"]:
+                element = elements.get((t["file"], name)) or elements.get(("KEY", name))
+                record, report = build_variable(name, table, spec, rel, measure, element, values[name], labels[name])
+                records.append(record)
+                notes += report
+            write_jsonl(META / "releases" / rid / table / "variables.jsonl", records)
+            all_records += records
+        counts, disagreements = compare_with_data(histories, rid, data)
+        sections += [f"### {rid}", "", "| Histories, and distinct codes in the data | Count |", "|---|---|",
+                     *[f"| {k} | {v} |" for k, v in counts.items()], "",
+                     *(disagreements or ["No disagreements."]), "",
+                     "Keys and references in dataset.yaml, checked against the data:", "",
+                     *check_keys_and_references(rel), ""]
 
-    signatures = [{"target": {"variable": r["name"], "table": r["table"]}, "property": "scale_signature",
-                   "value": SCALE_SIGNATURES[lab], "rule": "scale_signature_from_valid_labels", "rule_version": RULE_VERSION}
+    signatures = [{"target": {"release": r["release"], "table": r["table"], "variable": r["name"]},
+                   "property": "scale_signature", "value": SCALE_SIGNATURES[lab],
+                   "rule": "scale_signature_from_valid_labels", "rule_version": RULE_VERSION}
                   for r in all_records
                   if (lab := tuple(v["label"] for v in r.get("values", []) if v["kind"] == "valid")) in SCALE_SIGNATURES]
     write_jsonl(META / "derived" / "scale_signature.jsonl", signatures)
-    histories = build_histories(spec, element_list, elements)
-    write_jsonl(META / "histories.jsonl", histories)
+    links = build_links(spec, histories, all_records)
+    write_jsonl(META / "links.jsonl", links)
+    relations = collections.Counter(rel for link in links for rel in link["relations"])
     types = collections.Counter(tp for r in all_records for v in r.get("values", []) if v["kind"] == "missing"
                                 for tp in v["missing_types"])
-    lines = [f"# Build report: FARS slice, release {spec['release']}", "", "Generated by `build/build_slice.py`. Do not edit.", "",
+    lines = [f"# Build report: FARS slice, releases {', '.join(spec['releases'])}", "",
+             "Generated by `build/build_slice.py`. Do not edit.", "",
              f"- Manual elements parsed: {len({id(e) for e in elements.values()})}", *summaries,
              f"- Unresolved codes: {sum(v['kind'] == 'unresolved' for r in all_records for v in r.get('values', []))}",
              f"- Codes whose manual and data labels differ only in detail (case, punctuation, year notes, added examples): {len(minor)}",
              f"- Scale signatures: {len(signatures)}", "", "## Missing types assigned, by number of codes", "",
              "| Type | Codes |", "|---|---|", *[f"| `{tp}` | {k} |" for tp, k in sorted(types.items())], "",
              "## Code histories (metadata/histories.jsonl)", "", *check_histories(histories, all_records), "",
-             "## Keys and references in dataset.yaml, checked against the data", "",
-             *check_keys_and_references(spec), "",
+             "## Histories tested against each release's data", "",
+             "For each code that occurs in a release's data: is it in the history's column for that year, and does the "
+             "history's label (the manual's, verbatim) match the CSV's NAME label?", "", *sections,
+             "## Links (metadata/links.jsonl), by rule from the histories", "",
+             *[f"- {', '.join(f'{p['from']} → {p['to']}' for p in spec.get('links', []))}: {len(links)} links"],
+             *[f"- `{k}`: {v}" for k, v in sorted(relations.items())], "",
+             *[f"- `{l['from']['table']}/{l['from']['name']}`: {', '.join(l['relations'])}. {l.get('note', '')}"
+               for l in links if l["relations"] != ["same_item"]], "",
              "## Values and labels to look at", "", *([f"- {n}" for n in notes] or ["None."]), ""]
     (ROOT / "build" / "report.md").write_text("\n".join(lines))
-    print(f"{len(all_records)} variables in {len(spec['tables'])} tables; see build/report.md")
+    print(f"{len(all_records)} records in {len(spec['releases'])} releases, {len(links)} links; see build/report.md")
 
 
 def write_jsonl(path, records):

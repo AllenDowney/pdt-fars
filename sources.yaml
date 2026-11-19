@@ -5,7 +5,7 @@ sources:
     format: pdf
     url: https://doi.org/10.21949/dz60-ft73
     path: data/raw/fars_analytical_users_manual_1975_2024.pdf
-    releases: ["2024"]
+    releases: ["2024", "2017"]
     redistribution: ship
     acquisition: manual
     manual_steps: >
@@ -60,3 +60,76 @@ sources:
     manual_steps: Download from NHTSA in a browser.
     fetched_on: "2026-11-19"
     sha256: 03da0846ca445d22944a7e1b67b7b990c7c5741d7dc120ade47e4dd5bbbd8c36
+  - id: fars-2017-csv
+    title: FARS 2017 national data, CSV (FARS2017NationalCSV.zip)
+    kind: data
+    format: csv
+    path: data/raw/fars2017/FARS2017NationalCSV.zip
+    releases: ["2017"]
+    redistribution: ship
+    acquisition: manual
+    manual_steps: >
+      Allen Downey downloaded it in a browser from NHTSA's FARS file downloads,
+      https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/FARS/2017/National/
+      (nhtsa.gov blocks scripts), to data/raw/fars2017/. Unzipped to
+      data/raw/fars2017/csv/.
+    fetched_on: "2026-11-19"
+    sha256: 1a886757b7bf611c883cc9039e0f3cf1915142dcb0e31fcbaa14c96aab2385c4
+    note: The release note's last update is 03/02/2022; the CSV's NAME label columns were added in the 12/18/2020 update, so they aren't 2017's own.
+  - id: fars-2017-sas
+    title: FARS 2017 national data, SAS (FARS2017NationalSAS.zip)
+    kind: data
+    format: sas7bdat
+    path: data/raw/fars2017/FARS2017NationalSAS.zip
+    releases: ["2017"]
+    redistribution: ship
+    acquisition: manual
+    manual_steps: >
+      Allen Downey downloaded it in a browser from NHTSA's FARS file downloads,
+      https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/FARS/2017/National/
+      (nhtsa.gov blocks scripts), to data/raw/fars2017/.
+    fetched_on: "2026-11-19"
+    sha256: 9b6829628ab7c4a9ce6a423e57160f2a7e6f4a002b8f74515fff8f56bd483ac6
+  - id: fars-2017-aux-csv
+    title: FARS 2017 national auxiliary files, CSV (FARS2017NationalAuxiliaryCSV.zip)
+    kind: data
+    format: csv
+    path: data/raw/fars2017/FARS2017NationalAuxiliaryCSV.zip
+    releases: ["2017"]
+    redistribution: ship
+    acquisition: manual
+    manual_steps: >
+      Allen Downey downloaded it in a browser from NHTSA's FARS file downloads,
+      https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/FARS/2017/National/
+      (nhtsa.gov blocks scripts), to data/raw/fars2017/.
+    fetched_on: "2026-11-19"
+    sha256: 60c77e5a67b46d14c1c43ed85b477f0279a9f694d2ea5e0b214d1ad251a08238
+  - id: fars-2017-aux-sas
+    title: FARS 2017 national auxiliary files, SAS (FARS2017NationalAuxiliarySAS.zip)
+    kind: data
+    format: sas7bdat
+    path: data/raw/fars2017/FARS2017NationalAuxiliarySAS.zip
+    releases: ["2017"]
+    redistribution: ship
+    acquisition: manual
+    manual_steps: >
+      Allen Downey downloaded it in a browser from NHTSA's FARS file downloads,
+      https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/FARS/2017/National/
+      (nhtsa.gov blocks scripts), to data/raw/fars2017/.
+    fetched_on: "2026-11-19"
+    sha256: cb30f96dddea5cdf02eefc6359537487c947ad03df6ebabf71628c5a28b39673
+  - id: fars-2017-release-note
+    title: FARS 2017 Release Note (FARS2017 Release Note.txt)
+    kind: release_notes
+    format: txt
+    path: "data/raw/fars2017/FARS2017 Release Note.txt"
+    releases: ["2017"]
+    redistribution: ship
+    acquisition: manual
+    manual_steps: >
+      Allen Downey downloaded it in a browser from NHTSA's FARS file downloads,
+      https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/FARS/2017/National/
+      (nhtsa.gov blocks scripts), to data/raw/fars2017/.
+    fetched_on: "2026-11-19"
+    sha256: 565f2b53f781f78392fb5fd6dc8532c5786629dced77f468916ba62931fbd0e7
+    note: Update history of the 2017 files, 09/27/2018 to 03/02/2022, including data revisions in the 12/18/2020 update.

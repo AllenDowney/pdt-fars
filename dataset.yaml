@@ -1,6 +1,7 @@
 standard_version: "0.1"
 id: fars
 title: Fatality Analysis Reporting System
+kind: administrative   # STANDARD.md §2.1: survey, administrative or portal
 publisher:
   name: National Highway Traffic Safety Administration (NHTSA), National Center for Statistics and Analysis
   url: https://www.nhtsa.gov/

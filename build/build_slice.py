@@ -32,6 +32,15 @@ from pathlib import Path
 
 import yaml
 
+# Shared rules from the PublicDataToolkit library (STANDARD.md §6): `make build` puts it on
+# PYTHONPATH; otherwise use a checkout next to this repo, or $PDT.
+try:
+    from pdt.derived import scale_signatures
+except ImportError:
+    import os, sys
+    sys.path.insert(0, str(Path(os.environ.get("PDT", Path(__file__).resolve().parents[2] / "PublicDataToolkit")) / "lib"))
+    from pdt.derived import scale_signatures
+
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "data" / "raw"
 META = ROOT / "metadata"
@@ -246,8 +255,6 @@ def missing_types(label):
         return ["unknown"]
     return None
 
-
-SCALE_SIGNATURES = {("No", "Yes"): "yes_no"}
 
 # ----------------------------------------------------------------- build
 
@@ -684,11 +691,7 @@ def main():
                      "Keys and references in dataset.yaml, checked against the data:", "",
                      *check_keys_and_references(rel), ""]
 
-    signatures = [{"target": {"release": r["release"], "table": r["table"], "variable": r["name"]},
-                   "property": "scale_signature", "value": SCALE_SIGNATURES[lab],
-                   "rule": "scale_signature_from_valid_labels", "rule_version": RULE_VERSION}
-                  for r in all_records
-                  if (lab := tuple(v["label"] for v in r.get("values", []) if v["kind"] == "valid")) in SCALE_SIGNATURES]
+    signatures = scale_signatures(all_records)
     write_jsonl(META / "derived" / "scale_signature.jsonl", signatures)
     links = build_links(spec, histories, all_records)
     write_jsonl(META / "links.jsonl", links)

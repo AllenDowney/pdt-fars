@@ -535,7 +535,6 @@ tables:
       Available: 2017
     constraints:
     - primary_key
-    - foreign_key
   - name: PER_NO
     label: Person Number
     description: This data element is the consecutive number assigned to each person in the case (i.e.,

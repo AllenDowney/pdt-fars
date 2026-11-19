@@ -11,7 +11,7 @@ The YAML files here follow data-dict spec 0.1.0. They describe the common data f
 | missing or unresolved codes, typed only in the `__code` column's labels | 62 | 63 |
 | availability entries (wave by form, with n), summarized as one line of text | 40 | 40 |
 | field origins (publisher, data file, rule, hand, model) not exported | 286 | 286 |
-| table references whose `when` condition is only in a description | 2 | 2 |
+| table references whose `when` condition is only in a description, and whose columns aren't marked foreign_key | 2 | 2 |
 | links between releases, not exported | 40 | 40 |
 | derived properties (scale signatures), not exported | 2 | 2 |
 | code histories, not exported | 42 | 42 |

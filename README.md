@@ -43,6 +43,15 @@ make data       # the data in the common format, data/processed/
 make check
 ```
 
+`scripts/extract.py` writes an extract from the common-format files (`make data` first), for example:
+
+```bash
+python scripts/extract.py --release 2024 --table person --vars ST_CASE,AGE,SEX,INJ_SEV --codes \
+    --out persons.csv
+```
+
+`python scripts/extract.py --help` lists the releases and tables and the options.
+
 ## License
 
 Code here is under the MIT License. Our metadata, corrections and generated views are under CC BY 4.0. The publisher's files and documentation keep the publisher's terms (above). See [`LICENSE`](LICENSE).

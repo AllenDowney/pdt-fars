@@ -42,3 +42,7 @@ make build      # the records, histories and links
 make data       # the data in the common format, data/processed/
 make check
 ```
+
+## License
+
+Code here is under the MIT License. Our metadata, corrections and generated views are under CC BY 4.0. The publisher's files and documentation keep the publisher's terms (above). See [`LICENSE`](LICENSE).
